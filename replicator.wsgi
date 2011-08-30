@@ -28,6 +28,7 @@ def send_file(file_path, size):
 def friends_have_file(servers, path):
     path_regex = r'^(?P<path>[\w|/|\-]+)/(?P<file>[\w|-]+\.[\w]{1,3})?'
     for server in servers :
+        # if server ip in excluded ips meaning a request coming from a friendly do not ask it for the file
         url = server + path
         filehandle = urllib.urlopen(url)
         #print "server response : ", filehandle.code, " for url : ", url

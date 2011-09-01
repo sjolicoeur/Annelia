@@ -7,15 +7,12 @@ from wsgiref.simple_server import make_server
 import os.path
 import mimetypes
 import urllib
-import os
-os.environ['PYTHON_EGG_CACHE'] = '/tmp/replicator_cache'
+
 
 mimetypes.init()
-# depending on where it is installed with the wsgi alias that path is not part of what the app sees
-# as such it must be added in the root_dir and urls!
-ROOT_DIR = "/var/your-location/"
-BLOCK_SIZE = 256
-FRIENDS = ["http://www.example.com/"]
+ROOT_DIR = "/tmp/"#"/Users/sjolicoeur/Sites/"
+BLOCK_SIZE = 2048
+FRIENDS = ["http://localhost/"] #["http://www.nfb.ca/"]
 
 # 
 def download_and_send_file(file_path, size, remote_file=None):
@@ -29,10 +26,10 @@ def download_and_send_file(file_path, size, remote_file=None):
             
 def send_file(file_path, size, remote_file=None):
     with open(file_path) as f:
-        block = f.read(BLOCK_SIZE)
+        block = f.read(size)
         while block:
             yield block
-            block = f.read(BLOCK_SIZE)
+            block = f.read(size)
 
 def friends_have_file(servers, path, requester_ip=None):
     path_regex = r'^(?P<path>[\w|/|\-~]+)/(?P<file>[\w|-]+\.[\w]{1,3})?'
@@ -101,14 +98,14 @@ def application(environ, start_response):
             print " already had file on hand! "
             guessed_mime_type = mimetypes.guess_type(system_path)[0]
             start_response('200 OK', [('Content-Type', guessed_mime_type)])
-            return send_file(system_path, 256)
+            return send_file(system_path, BLOCK_SIZE)
     else :
         print " searching for file "
         found_file, remote_file = friends_have_file(FRIENDS, requested_path)
         if found_file :
             guessed_mime_type = mimetypes.guess_type(system_path)[0]
             start_response('200 OK', [('Content-Type', guessed_mime_type)])
-            return download_and_send_file(system_path, 1024, remote_file)
+            return download_and_send_file(system_path, BLOCK_SIZE, remote_file)
         else :
             return not_found(environ, start_response)
 

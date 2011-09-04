@@ -15,7 +15,7 @@ mimetypes.init()
 
 file_path2 = "/tmp/test.m4v"
 guessed_mime_type = mimetypes.guess_type(file_path2)[0]
-size =  2048
+SIZE =  2048
 BEING_DOWNLOADED = {}
 
 def download_file(file_path, size, remote_file=None):
@@ -23,33 +23,11 @@ def download_file(file_path, size, remote_file=None):
         with open(file_path, "w+ar") as f:
             block = remote_file.read(size)
             while block:
-                #yield block #"%x" % len(block) + "\r\n" + block + "\r\n"
                 f.write(block)
                 f.flush()
                 block = remote_file.read(size)
             BEING_DOWNLOADED.pop(file_path)
             print "\n\n\t\tended file!!!\n\n"
-            #yield "0\r\n\r\n"
-
-def download_and_send_file(file_path, size, remote_file=None):
-    if  remote_file :
-        with open(file_path, "w+ar") as f:
-            block = remote_file.read(size)
-            while block:
-                yield block #"%x" % len(block) + "\r\n" + block + "\r\n"
-                f.write(block)
-                block = remote_file.read(size)
-                print " read block \n"
-            BEING_DOWNLOADED.pop(file_path)
-            print "\n\n\t\tended file!!!\n\n"
-            #yield "0\r\n\r\n"
-            
-def send_file(file_path, size, remote_file=None):
-    with open(file_path) as f:
-        block = f.read(size)
-        while block:
-            yield block
-            block = f.read(size)
 
 def friends_have_file(servers, path, requester_ip=None):
     path_regex = r'^(?P<path>[\w|/|\-~]+)/(?P<file>[\w|-]+\.[\w]{1,3})?'
@@ -81,44 +59,38 @@ def friends_have_file(servers, path, requester_ip=None):
     return False, None
 
 
-
-
-def index():
-    """This function will be mounted on "/"
-	"""
-    cherrypy.lib.cptools.response_headers(headers=[('Content-Type', "text/html; charset=UTF-8")], debug=True )
-    return '''Great You've found me! Now Dance!!!!!'''
-
-
 def not_found():
     """Called if no URL matches."""
     raise cherrypy.HTTPError(404, "Not Found.")
     
 
-
-  
-
-class Questions(object):
+class Annelia(object):
     _cp_config = { 
             'tools.encode.on':True,
             'tools.encode.encoding':'utf8',
             } 
     
-
+    @cherrypy.expose()
+    def index(self):
+        """This function will be mounted on "/"
+    	"""
+        cherrypy.lib.cptools.response_headers(headers=[('Content-Type', "text/html; charset=UTF-8")], debug=True )
+        return '''Great You've found me! Now Dance!!!!!'''
+        
     @cherrypy.expose()
     #@cherrypy.tools.firstheaders()
-    def index(self):    
+    def test(self):    
         cherrypy.lib.cptools.response_headers(headers=[('Content-Type', guessed_mime_type)], debug=True )
         ##cherrypy.response.first_headers = [('Content-Type', guessed_mime_type)]#[('foo', '1'), ('foo', '2')]    
         print "in index!!!"
         def get_file():
             with open(file_path2, "r") as f:
                 
-                block = f.read(size)
+                block = f.read(SIZE)
                 while block:
                     #print "\t\t\twritting block"
                     yield block 
-                    block = f.read(size)
+                    block = f.read(SIZE)
         #return get_file()
         #return cherrypy.lib.static.serve_file(file_path2, content_type=guessed_mime_type,debug=True)
         return serve_file(file_path2, content_type=guessed_mime_type,debug=True)
@@ -137,7 +109,7 @@ class Questions(object):
         print " this is what  am looking for ", system_path
         if os.path.exists(system_path) :
             if os.path.isdir(system_path) :
-                return index()
+                return self.index()
             else :
                 print " already had file on hand! "
                 print " of cached length :: ", BEING_DOWNLOADED.get(system_path, None)
@@ -163,7 +135,6 @@ class Questions(object):
                 Process(target=download_file, args=(system_path, BLOCK_SIZE, remote_file)).start()
                 #sleep a while to let the download start
                 time.sleep(0.2)
-                #return download_and_send_file(system_path, BLOCK_SIZE, remote_file)
                 return serve_file(system_path, content_type=guessed_mime_type, content_length=content_length, debug=True)
                 
             else :
@@ -171,11 +142,7 @@ class Questions(object):
                 return not_found()
 
         return not_found()
-        
-        
-        
-        
-        
+    
     default._cp_config = {'response.stream': True}
     
     
@@ -191,4 +158,4 @@ if __name__ == '__main__':
     #app = cherrypy.tree.mount(root, script_name='/')
     #cherrypy.engine.start()
     #cherrypy.engine.block()
-    cherrypy.quickstart(Questions())
+    cherrypy.quickstart(Annelia())

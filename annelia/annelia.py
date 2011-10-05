@@ -135,7 +135,7 @@ if __name__ == '__main__':
     #host_ip = 0.0.0.0
     #host_port = 8051
     #thread_num = 10
-    need to fine tune this
+    #need to fine tune this
     try :    
         print options, dir(options), type(options), args
         BLOCK_SIZE=  config.getint('ServerConfig', 'block_size')

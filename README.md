@@ -14,6 +14,7 @@ Configuration
 an example of configuration : 
 ```
 [ServerConfig]
+
 block_size = 2048
 root_dir = /tmp/
 friends = http://example.com/,http://example.ca/

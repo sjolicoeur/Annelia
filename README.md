@@ -12,9 +12,9 @@ Configuration
 -------------
 
 an example of configuration : 
+
 ```
 [ServerConfig]
-
 block_size = 2048
 root_dir = /tmp/
 friends = http://example.com/,http://example.ca/
@@ -22,6 +22,7 @@ host_ip = 0.0.0.0
 host_port = 8051
 thread_num = 10
 ```
+
 NOTE : Do Not configure a server as it's own friend! 
 
 

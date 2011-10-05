@@ -8,12 +8,25 @@ Edge Server
 
 In short this replicates the abilities of an edge server, demand content if it's not on the server it will ask it's configured friendly servers if they have the file and if so will download it from them.
 
+Configuration
+-------------
+
+an example of configuration : 
+[ServerConfig]
+block_size = 2048
+root_dir = /tmp/
+friends = http://example.com/,http://example.ca/
+host_ip = 0.0.0.0
+host_port = 8051
+thread_num = 10
+
+NOTE : Do Not configure a server as it's own friend! 
+
 
 Missing
 _______
 
 * Caching
-* Configurability
 * Timeouts to prevent a ping-pong effect of servers that are identical
 
 Caveat

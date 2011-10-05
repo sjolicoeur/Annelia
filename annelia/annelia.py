@@ -11,9 +11,15 @@ import mimetypes
 import urllib
 import cherrypy
 from multiprocessing import Process, Queue, current_process
+from urllib import FancyURLopener
 
 from monkey_staticserve import serve_file
 mimetypes.init()
+
+class AnneliaOpener(FancyURLopener):
+    version = 'Annelia'
+
+
 
 BEING_DOWNLOADED = {}
 
@@ -26,7 +32,7 @@ def download_file(file_path, size, remote_file=None):
                 f.flush()
                 block = remote_file.read(size)
             BEING_DOWNLOADED.pop(file_path)
-            print "\n\n\t\tended file!!!\n\n"
+            #print "\n\n\t\tended file!!!\n\n"
 
 def friends_have_file(servers, path, requester_ip=None):
     path_regex = r'^(?P<path>[\w|/|\-~]+)/(?P<file>[\w|-]+\.[\w]{1,3})?'
@@ -35,7 +41,7 @@ def friends_have_file(servers, path, requester_ip=None):
         # if server ip in excluded ips meaning a request coming from a friendly do not ask it for the file
         url = server + path
         print " contacting friend :: ", url
-        filehandle = urllib.urlopen(url)
+        filehandle = AnneliaOpener().open(url) #urllib.urlopen(url)
         if filehandle.code == 200 :
             print "found file in remote server"
             # sync file
@@ -76,19 +82,25 @@ class Annelia(object):
 
     @cherrypy.expose()
     def default(self, *args, **kwarg):
+        req = cherrypy.serving.request
+        user_agent = req.headers['User-Agent']
+        #print "request" , dir(req), req.headers
         requested_path = "/".join(args) #environ.get('PATH_INFO', '').lstrip('/')
-        print " this is the requested path ", requested_path
+        #print " this is the requested path ", requested_path
         system_path = ROOT_DIR + requested_path
-        print " this is what  am looking for ", system_path
-        if os.path.exists(system_path) :
+        #print " this is what  am looking for ", system_path
+        if os.path.exists(system_path) : # file has been found
             if os.path.isdir(system_path) :
                 return self.index()
             else :
                 print " already had file on hand! "
-                print " of cached length :: ", BEING_DOWNLOADED.get(system_path, None)
                 guessed_mime_type = mimetypes.guess_type(system_path)[0]
                 return serve_file(system_path, content_type=guessed_mime_type,debug=True, content_length=BEING_DOWNLOADED.get(system_path, None))
-                
+        elif user_agent.lower().startswith("annelia") : # do not have the file and req from another annelia server
+            # file was not found and this is a friend ... raise 404
+            print "file was not found and this is a friend ... raise 404"
+            #print "BEING_DOWNLOADED", BEING_DOWNLOADED
+            return not_found()
         else :
             print " searching for file "
             found_file, remote_file = friends_have_file(FRIENDS, requested_path)
@@ -107,7 +119,7 @@ class Annelia(object):
                 return serve_file(system_path, content_type=guessed_mime_type, content_length=content_length, debug=True)
                 
             else :
-                print "file not found!", BEING_DOWNLOADED
+                BEING_DOWNLOADED.pop(system_path)
                 return not_found()
 
         return not_found()

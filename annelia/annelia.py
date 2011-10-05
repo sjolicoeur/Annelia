@@ -160,36 +160,10 @@ if __name__ == '__main__':
         print BLOCK_SIZE, ROOT_DIR, FRIENDS, HOST_IP, HOST_PORT, THREAD_NUM
     except :
         print "BAD CONFIG FILE "
-    #cherrypy.config.update({'server.socket_host': HOST_IP,
-    #                           'server.socket_port': HOST_PORT,
-    #                           'server.thread_pool' : THREAD_NUM,
-    #                           'server.max_request_body_size' : 50000000000,
-    #                           'server.protocol_version' : "HTTP/1.1",
-    #                        })
-    #cherrypy.quickstart(Annelia())
-    
-    cherrypy.tree.mount(Annelia())
-    cherrypy.server.unsubscribe()
-
-    server1 = cherrypy._cpserver.Server()
-    server1.socket_port=4430
-    server1.socket_host=HOST_IP
-    server1.thread_pool=THREAD_NUM #ssl THREAD_NUM ?
-    #server1.ssl_module = 'pyopenssl'
-    #server1.ssl_certificate = '/home/ubuntu/my_cert.crt'
-    #server1.ssl_private_key = '/home/ubuntu/my_cert.key'
-    #server1.ssl_certificate_chain = '/home/ubuntu/gd_bundle.crt'
-    server1.subscribe()
-
-    server2 = cherrypy._cpserver.Server()
-    server2.socket_port=HOST_PORT
-    server2.socket_host=HOST_IP
-    server2.thread_pool=THREAD_NUM
-    server2.max_request_body_size = 50000000000
-    server2.protocol_version = "HTTP/1.1"
-    server2.subscribe()
-    
-    
-
-    cherrypy.engine.start()
-    cherrypy.engine.block()
+    cherrypy.config.update({'server.socket_host': HOST_IP,
+                               'server.socket_port': HOST_PORT,
+                               'server.thread_pool' : THREAD_NUM,
+                               'server.max_request_body_size' : 50000000000,
+                               'server.protocol_version' : "HTTP/1.1",
+                            })
+    cherrypy.quickstart(Annelia())

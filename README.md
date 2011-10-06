@@ -23,6 +23,12 @@ host_port = 8051
 thread_num = 10
 ```
 
+start the server with :
+
+```
+nohup python annelia/annelia.py  -c /path/to/conf &
+```
+
 NOTE : Do Not configure a server as it's own friend! 
 
 

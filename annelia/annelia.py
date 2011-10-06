@@ -10,6 +10,7 @@ import os.path
 import mimetypes
 import urllib
 import cherrypy
+from cherrypy.process.plugins import Daemonizer
 from multiprocessing import Process, Queue, current_process
 from urllib import FancyURLopener
 
@@ -137,24 +138,14 @@ if __name__ == '__main__':
     import ConfigParser
     config = ConfigParser.RawConfigParser()
     config.read(options.config_file)
-    #block_size = 2048
-    #root_dir = /tmp/
-    #friends = http://example.com/,http://example.ca/
-    #host_ip = 0.0.0.0
-    #host_port = 8051
-    #thread_num = 10
-    #need to fine tune this
-    #cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe() 
+    
     try :    
-        print options, dir(options), type(options), args
         BLOCK_SIZE=  config.getint('ServerConfig', 'block_size')
         ROOT_DIR = config.get('ServerConfig', 'root_dir').strip(" ")
         FRIENDS = [x.strip(" ") for x in config.get('ServerConfig', 'friends').split(",")]
         HOST_IP = config.get('ServerConfig', 'host_ip')
         HOST_PORT = config.getint('ServerConfig', 'host_port')
         THREAD_NUM = config.getint('ServerConfig', 'thread_num')
-        
-        print BLOCK_SIZE, ROOT_DIR, FRIENDS, HOST_IP, HOST_PORT, THREAD_NUM
     except :
         print "BAD CONFIG FILE "
     cherrypy.config.update({'server.socket_host': HOST_IP,
@@ -162,11 +153,27 @@ if __name__ == '__main__':
                             'server.thread_pool' : THREAD_NUM,
                             'server.max_request_body_size' : 50000000000,
                             'server.protocol_version' : "HTTP/1.1",
-                            'log.access_file' : os.path.join(os.path.dirname(__file__), "access.log"),  
+                            #'log.access_file' : os.path.join(os.path.dirname(__file__), "access.log"),  
                             'log.screen': False,  
                             'tools.sessions.on': False,
                             'request.show_tracebacks': False,
                             'environment' : 'production',
-                            #'tools.gzip.on': True,
+                            'tools.gzip.on': True,
+                            'autoreload_on' : True,
                             })
+    print "BOOTING UP..........", ".."*12 
     cherrypy.quickstart(Annelia())
+    #cherrypy.engine.start()
+    
+    #cherrypy.tree.mount(Annelia()) 
+    #cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()    
+    #cherrypy.root = Annelia()              
+    #annelie = Daemonizer(cherrypy.engine)
+    #annelie.subscribe()
+    #annelie.start()
+    #cherrypy.quickstart(Annelia())
+    #cherrypy.engine.block() 
+    
+    #cherrypy.engine.start()
+    #cherrypy.engine.block()
+    

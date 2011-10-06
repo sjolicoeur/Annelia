@@ -40,20 +40,20 @@ def friends_have_file(servers, path, requester_ip=None):
     for server in servers :
         # if server ip in excluded ips meaning a request coming from a friendly do not ask it for the file
         url = server + path
-        print " contacting friend :: ", url
+        cherrypy.log( " contacting friend :: %s" % url )
         filehandle = AnneliaOpener().open(url) #urllib.urlopen(url)
         if filehandle.code == 200 :
-            print "found file in remote server"
+            cherrypy.log( "found file in remote server" )
             # sync file
             # ask friend if path is file or dir or get from headers?
             #data = filehandle.read()
             regex_match = re.match(path_regex, path)
             if regex_match :
                 fs_dir_path = ROOT_DIR + regex_match.group("path")
-                print "Matched the following " , regex_match.groups(), "for path :", path
+                cherrypy.log( "Matched the following %s for path : %s" % (regex_match.groups(), path ) )
                 if not os.path.isdir(fs_dir_path) :
                     # create dir
-                    print "creating directory", fs_dir_path
+                    cherrypy.log( "creating directory : %s" % fs_dir_path )
                     os.makedirs(fs_dir_path)
                 if not regex_match.group("file") :
                     filehandle = None # do not download index file
@@ -84,32 +84,28 @@ class Annelia(object):
     def default(self, *args, **kwarg):
         req = cherrypy.serving.request
         user_agent = req.headers['User-Agent']
-        #print "request" , dir(req), req.headers
         requested_path = "/".join(args) #environ.get('PATH_INFO', '').lstrip('/')
-        #print " this is the requested path ", requested_path
         system_path = ROOT_DIR + requested_path
-        #print " this is what  am looking for ", system_path
         if os.path.exists(system_path) : # file has been found
             if os.path.isdir(system_path) :
                 return self.index()
             else :
-                print " already had file on hand! "
+                cherrypy.log( " already had file on hand! " )
                 guessed_mime_type = mimetypes.guess_type(system_path)[0]
                 return serve_file(system_path, content_type=guessed_mime_type,debug=True, content_length=BEING_DOWNLOADED.get(system_path, None))
         elif user_agent.lower().startswith("annelia") : # do not have the file and req from another annelia server
             # file was not found and this is a friend ... raise 404
-            print "file was not found and this is a friend ... raise 404"
-            #print "BEING_DOWNLOADED", BEING_DOWNLOADED
+            cherrypy.log( "file was not found and this is a friend ... raise 404" )
             return not_found()
         else :
-            print " searching for file "
+            cherrypy.log( " searching for file " )
             found_file, remote_file = friends_have_file(FRIENDS, requested_path)
             if os.path.isdir(system_path) :
                 return index()
             elif found_file and remote_file and not system_path in BEING_DOWNLOADED:
                 BEING_DOWNLOADED[system_path] = True
                 guessed_mime_type = remote_file.info().getheader("Content-Type")  
-                print "guessed mimetype", guessed_mime_type
+                cherrypy.log( "guessed mimetype : %s" % guessed_mime_type )
                 content_length = remote_file.info().getheader("Content-Length") #("Transfer-Encoding","chunked")
                 BEING_DOWNLOADED[system_path] = content_length
                 # fork download here
@@ -148,6 +144,7 @@ if __name__ == '__main__':
     #host_port = 8051
     #thread_num = 10
     #need to fine tune this
+    #cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe() 
     try :    
         print options, dir(options), type(options), args
         BLOCK_SIZE=  config.getint('ServerConfig', 'block_size')
@@ -161,9 +158,15 @@ if __name__ == '__main__':
     except :
         print "BAD CONFIG FILE "
     cherrypy.config.update({'server.socket_host': HOST_IP,
-                               'server.socket_port': HOST_PORT,
-                               'server.thread_pool' : THREAD_NUM,
-                               'server.max_request_body_size' : 50000000000,
-                               'server.protocol_version' : "HTTP/1.1",
+                            'server.socket_port': HOST_PORT,
+                            'server.thread_pool' : THREAD_NUM,
+                            'server.max_request_body_size' : 50000000000,
+                            'server.protocol_version' : "HTTP/1.1",
+                            'log.access_file' : os.path.join(os.path.dirname(__file__), "access.log"),  
+                            'log.screen': False,  
+                            'tools.sessions.on': False,
+                            'request.show_tracebacks': False,
+                            'environment' : 'production',
+                            #'tools.gzip.on': True,
                             })
     cherrypy.quickstart(Annelia())

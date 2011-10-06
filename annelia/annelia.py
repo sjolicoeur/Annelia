@@ -153,7 +153,9 @@ if __name__ == '__main__':
                             'server.thread_pool' : THREAD_NUM,
                             'server.max_request_body_size' : 50000000000,
                             'server.protocol_version' : "HTTP/1.1",
-                            #'log.access_file' : os.path.join(os.path.dirname(__file__), "access.log"),  
+                            'log.access_file' : os.path.join(os.path.dirname(__file__), "access.log"),             
+                            'log.error_file': os.path.join(os.path.dirname(__file__), "errors.log"),             
+
                             'log.screen': False,  
                             'tools.sessions.on': False,
                             'request.show_tracebacks': False,

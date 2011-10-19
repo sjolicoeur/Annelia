@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import with_statement
 import time
 import os
 import re
@@ -15,6 +15,10 @@ from multiprocessing import Process, Queue, current_process
 from urllib import FancyURLopener
 
 from monkey_staticserve import serve_file
+mimetypes.add_type("application/vnd.ms-fontobject", ".eot")
+mimetypes.add_type("application/octet-stream", ".otf")
+mimetypes.add_type("application/octet-stream", ".ttf")
+mimetypes.add_type("application/octet-stream", ".woff")
 mimetypes.init()
 
 class AnneliaOpener(FancyURLopener):

@@ -15,11 +15,12 @@ from multiprocessing import Process, Queue, current_process
 from urllib import FancyURLopener
 
 from monkey_staticserve import serve_file
+mimetypes.init()
 mimetypes.add_type("application/vnd.ms-fontobject", ".eot")
 mimetypes.add_type("application/octet-stream", ".otf")
 mimetypes.add_type("application/octet-stream", ".ttf")
-mimetypes.add_type("application/octet-stream", ".woff")
-mimetypes.init()
+mimetypes.add_type("application/font-woff", ".woff")
+#mimetypes.init()
 
 class AnneliaOpener(FancyURLopener):
     version = 'Annelia'
@@ -27,6 +28,7 @@ class AnneliaOpener(FancyURLopener):
 
 
 BEING_DOWNLOADED = {}
+SANDBOXED_PATH = ["medias"] 
 
 def download_file(file_path, size, remote_file=None):
     if  remote_file :
@@ -42,6 +44,7 @@ def download_file(file_path, size, remote_file=None):
 def friends_have_file(servers, path, requester_ip=None):
     path_regex = r'^(?P<path>[\w|/|\-~]+)/(?P<file>[\w|-]+\.[\w]{1,3})?'
     # split by / look at last and see if it is a file in not don't pop out
+    cherrypy.log( " inspecting :: %s" % path )
     for server in servers :
         # if server ip in excluded ips meaning a request coming from a friendly do not ask it for the file
         url = server + path
@@ -52,6 +55,7 @@ def friends_have_file(servers, path, requester_ip=None):
             # sync file
             # ask friend if path is file or dir or get from headers?
             #data = filehandle.read()
+            
             regex_match = re.match(path_regex, path)
             if regex_match :
                 fs_dir_path = ROOT_DIR + regex_match.group("path")
@@ -89,7 +93,11 @@ class Annelia(object):
     def default(self, *args, **kwarg):
         req = cherrypy.serving.request
         user_agent = req.headers['User-Agent']
-        requested_path = "/".join(args) #environ.get('PATH_INFO', '').lstrip('/')
+        requested_path = "/".join(args) #environ.get('PATH_INFO', '').lstrip('/')   
+        # if not in sandbox return 404
+        if not args[0] in SANDBOXED_PATH :
+            cherrypy.log( " first part of path : %s" % args[0])
+            return not_found()
         system_path = ROOT_DIR + requested_path
         if os.path.exists(system_path) : # file has been found
             if os.path.isdir(system_path) :
@@ -150,6 +158,7 @@ if __name__ == '__main__':
         HOST_IP = config.get('ServerConfig', 'host_ip')
         HOST_PORT = config.getint('ServerConfig', 'host_port')
         THREAD_NUM = config.getint('ServerConfig', 'thread_num')
+        SANDBOXED_PATH = [x.strip(" ") for x in config.get('ServerConfig', 'sandboxed_path').split(",")]
     except :
         print "BAD CONFIG FILE "
     cherrypy.config.update({'server.socket_host': HOST_IP,
